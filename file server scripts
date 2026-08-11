@@ -1,0 +1,54 @@
+# Qovluq yaratmaq
+New-Item -Path "C:\Finance" -ItemType Directory
+
+# Qovluğu şəbəkədə hər kəsə paylaşmaq
+New-SmbShare -Name "Finance" -Path "C:\Finance" -FullAccess "Everyone"
+
+# Qovluğu məzmunu ilə birlikdə silmək
+Remove-Item -Path "C:\Finance" -Recurse -Force
+
+# Şəbəkə paylaşımını dayandırmaq
+Remove-SmbShare -Name "Finance" -Confirm:$false
+
+# Bütün paylaşımları görmək
+Get-SmbShare
+
+Mənası: Paylaşılan qovluğun təhlükəsizlik icazələrini sıfırlayır (əvvəlki miras qalan hüquqları ləğv edir) və yalnız müəyyən edilmiş Active Directory qrupuna (GG_Finance_Users) həmin qovluq üzərində dəyişiklik etmək hüququ (Modify) verir.
+Nə zaman işlədilir: Şirkət daxilində hər hansı bir şöbə qovluğu (məsələn, Mühasibatlıq) yaradarkən və həmin qovluğa yalnız müəyyən bir qrupun daxil olub faylları redaktə edə bilməsini təmin etmək istədikdə bu skriptdən istifadə edirsən.
+
+$Acl = Get-Acl "C:\Finance"
+$Acl.SetAccessRuleProtection($True, $True)
+Set-Acl "C:\Finance" $Acl
+$AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("GG_Finance_Users","Modify","ContainerInherit,ObjectInherit","None","Allow")
+$Acl.AddAccessRule($AccessRule)
+Set-Acl "C:\Finance" $Acl
+
+Qovluğun Ölçüsünü (Size) Yoxlamaq
+
+(Get-ChildItem -Path "C:\Finance" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
+
+İcazələri (Permissions) Sürətli Yoxlamaq
+Get-Acl "C:\Finance" | Select-Object -ExpandProperty Access
+
+İstifadədə Olan Faylları Tapmaq
+-SmbOpenFile | Where-Object { $_.Path -like "*Finance*" }
+
+İstifadəçinin Açdığı Sessiyanı Kəsmək (Kick)
+Close-SmbOpenFile -FileId <FaylID_Buraya_Yaz>
+
+5. Yeni İstifadəçi üçün Home Folder (Şəxsi Qovluq) Yaratmaq
+$User = "Elgin"
+New-Item -Path "D:\Users\$User" -ItemType Directory
+New-SmbShare -Name "$User$" -Path "D:\Users\$User" -FullAccess "$User"
+
+
+Diskdə Boş Sahəni Yoxlamaq
+Get-PSDrive -PSProvider FileSystem
+
+fayllari kocurmek
+
+# Köçürmək (Move)
+Move-Item -Path "C:\Source\*" -Destination "D:\Destination\" -Force
+
+# Kopyalamaq (Copy)
+Copy-Item -Path "C:\Source\*" -Destination "D:\Destination\" -Recurse
